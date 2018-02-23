@@ -1,5 +1,7 @@
 # AdvancementCommand
 Runs a command, optionally as console or permission elevated when receiving advancements
+## Downloads
+See [Releases](https://github.com/aikar/AdvancementCommand/releases)
 
 ## Documentation
 See examples below for format
