@@ -1,0 +1,21 @@
+on_advancement:
+  # example of running command temporarily as op - be careful, any sub commands of this command will have op too!
+  - advancement: minecraft:example
+    run_as: player
+    command: ranks add %player rank1
+    op: true
+  # run a standard command with no permissions
+  - advancement: minecraft:example
+    run_as: player
+    command: say Hey I just got an advancement!
+    op: false
+  # run a command as the console (command feedback to console instead of the player, ideal for rank changes)
+  - advancement: minecraft:example
+    run_as: console
+    command: ranks add %player rank1
+    op: false
+  # run a command temporarily given a specific permission node, but not op
+  - advancement: minecraft:example
+    run_as: player
+    command: teleport %player some secret coords
+    permission: minecraft.command.teleport
