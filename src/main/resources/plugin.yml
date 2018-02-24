@@ -2,5 +2,16 @@ name: AdvancementCommand
 version: ${project.version}
 main: co.aikar.advancementcommand.AdvancementCommand
 authors: [Aikar]
-description: When an advancement is ran, run a command at potentially elevated permissions
-website: https://aikar.co
+description: When an advancement is ran, run commands at potentially elevated permissions
+website: https://github.com/aikar/AdvancementCommand
+
+comands:
+  advancementcommand:
+    description: Reloads AdvancementCommand config
+    aliases: [advcom]
+    permission: advancementcommand
+
+permissions:
+  advancementcommand:
+    description: Lets you reload AdvancementCommand config
+    default: op

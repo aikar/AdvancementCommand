@@ -1,6 +1,7 @@
 package co.aikar.advancementcommand;
 
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -23,11 +24,12 @@ import java.util.regex.Pattern;
 @SuppressWarnings("unused")
 public final class AdvancementCommand extends JavaPlugin implements Listener {
 
-    private final ArrayListMultimap<String, CommandInfo> commandMap = ArrayListMultimap.create();
+    private final ListMultimap<String, CommandInfo> commandMap = ArrayListMultimap.create();
     private static final Pattern PLAYER = Pattern.compile("%player\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern PLAYER_DISPLAY = Pattern.compile("%playerdisplayname\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern UUID = Pattern.compile("%uuid\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern ADVANCEMENT = Pattern.compile("%advancement\b", Pattern.CASE_INSENSITIVE);
+
     @Override
     public void onEnable() {
         getServer().getPluginManager().registerEvents(this, this);
@@ -67,39 +69,37 @@ public final class AdvancementCommand extends JavaPlugin implements Listener {
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
     public void onPlayerAdvancementDone(PlayerAdvancementDoneEvent event) {
         String key = event.getAdvancement().getKey().toString();
-        runCommands(event, key);
+        processAdvancement(event, key);
     }
 
-    private void runCommands(PlayerAdvancementDoneEvent event, String key) {
+    private void processAdvancement(PlayerAdvancementDoneEvent event, String key) {
         List<CommandInfo> commands = this.commandMap.get(key.toLowerCase());
         if (commands == null || commands.isEmpty()) {
             return;
         }
+        Player player = event.getPlayer();
         for (CommandInfo info : commands) {
             if (info.alias != null) {
-                doWithPermissions(info, event.getPlayer(), () -> runCommands(event, info.alias));
+                doWithPermissions(info, player, () -> processAdvancement(event, info.alias));
             } else {
-                runCommand(event, key, info);
+                doWithPermissions(info, player, () -> dispatchCommands(event, key, info));
             }
         }
     }
 
-    private void runCommand(PlayerAdvancementDoneEvent event, String key, CommandInfo info) {
+    private Player dispatchCommands(PlayerAdvancementDoneEvent event, String key, CommandInfo info) {
         Player player = event.getPlayer();
+        CommandSender sender = info.asPlayer ? player : Bukkit.getConsoleSender();
         String name = player.getName();
         String displayName = player.getDisplayName();
-        String command = PLAYER.matcher(info.command).replaceAll(name);
-        command = PLAYER_DISPLAY.matcher(command).replaceAll(displayName);
-        command = ADVANCEMENT.matcher(command).replaceAll(key);
-        command = UUID.matcher(command).replaceAll(player.getUniqueId().toString());
-
-        if (!(info.asPlayer)) {
-            Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), command);
-            return;
+        for (String command : info.commands) {
+            command = PLAYER.matcher(command).replaceAll(name);
+            command = PLAYER_DISPLAY.matcher(command).replaceAll(displayName);
+            command = ADVANCEMENT.matcher(command).replaceAll(key);
+            command = UUID.matcher(command).replaceAll(player.getUniqueId().toString());
+            Bukkit.getServer().dispatchCommand(sender, command);
         }
-
-        String finalCommand = command;
-        doWithPermissions(info, player, () -> Bukkit.getServer().dispatchCommand(player, finalCommand));
+        return player;
     }
 
     private void doWithPermissions(CommandInfo info, Player player, Runnable run) {
@@ -132,22 +132,26 @@ public final class AdvancementCommand extends JavaPlugin implements Listener {
         return true;
     }
 
-    private class CommandInfo {
+    private static class CommandInfo {
         final boolean asPlayer;
-        final String command;
+        final List<String> commands = new ArrayList<>();
         final String alias;
         final boolean op;
         final List<String> permissions = new ArrayList<>();
         CommandInfo(ConfigurationSection section) {
-            this.asPlayer = !section.getString("run_as", "player").equals("console");
-            this.command = section.getString("command");
+            this.asPlayer = !section.getString("run_as", "player").trim().equalsIgnoreCase("console");
+            String command = section.getString("command");
+            if (command != null) {
+                this.commands.add(command);
+            }
+            this.commands.addAll(section.getStringList("commands"));
             this.alias = section.getString("alias");
-            boolean commandEmpty = this.command == null || this.command.isEmpty();
+            boolean commandEmpty = this.commands.isEmpty();
             if (this.alias != null && commandEmpty) {
-                throw new Error("command can not be empty");
+                throw new IllegalArgumentException("Commands can not be empty");
             }
             if (!commandEmpty && this.alias != null) {
-                throw new Error("You can not have both a command and alias configuration");
+                throw new IllegalArgumentException("You can not have both a command and alias configuration");
             }
             this.op = section.getBoolean("op", false);
             String permission = section.getString("permission");
@@ -155,9 +159,7 @@ public final class AdvancementCommand extends JavaPlugin implements Listener {
                 this.permissions.add(permission);
             }
             List<String> permissions = section.getStringList("permissions");
-            if (permissions != null) {
-                this.permissions.addAll(permissions);
-            }
+            this.permissions.addAll(permissions);
         }
     }
 }
