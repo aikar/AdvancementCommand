@@ -147,7 +147,7 @@ public final class AdvancementCommand extends JavaPlugin implements Listener {
             this.commands.addAll(section.getStringList("commands"));
             this.alias = section.getString("alias");
             boolean commandEmpty = this.commands.isEmpty();
-            if (this.alias != null && commandEmpty) {
+            if (this.alias == null && commandEmpty) {
                 throw new IllegalArgumentException("Commands can not be empty");
             }
             if (!commandEmpty && this.alias != null) {
