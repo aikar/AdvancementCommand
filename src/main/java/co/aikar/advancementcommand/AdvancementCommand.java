@@ -25,10 +25,10 @@ import java.util.regex.Pattern;
 public final class AdvancementCommand extends JavaPlugin implements Listener {
 
     private final ListMultimap<String, CommandInfo> commandMap = ArrayListMultimap.create();
-    private static final Pattern PLAYER = Pattern.compile("%player\b", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PLAYER_DISPLAY = Pattern.compile("%playerdisplayname\b", Pattern.CASE_INSENSITIVE);
-    private static final Pattern UUID = Pattern.compile("%uuid\b", Pattern.CASE_INSENSITIVE);
-    private static final Pattern ADVANCEMENT = Pattern.compile("%advancement\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PLAYER = Pattern.compile("%player\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PLAYER_DISPLAY = Pattern.compile("%playerdisplayname\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern UUID = Pattern.compile("%uuid\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern ADVANCEMENT = Pattern.compile("%advancement\\b", Pattern.CASE_INSENSITIVE);
 
     @Override
     public void onEnable() {
